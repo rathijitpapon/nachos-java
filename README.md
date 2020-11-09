@@ -144,8 +144,9 @@ The goal of Part 2 is to enhance Nachos so that it can support multiple user pro
     throw an exception within the kernel!). Otherwise, the system call should return the
     appropriate value as documented in test/syscall.h.
 
-    When any process is started, its file descriptors 0 and 1 must refer to standard input and standard output. Use UserKernel.console.openForReading() and
-    UserKernel.console.openForWriting() to make this easier. A user process is allowed to close these descriptors, just like descriptors returned by open().
+    When any process is started, its file descriptors 0 and 1 must refer to standard input and standard output.
+    Use UserKernel.console.openForReading() and UserKernel.console.openForWriting() to make this easier. 
+    A user process is allowed to close these descriptors, just like descriptors returned by open().
     
     
     
