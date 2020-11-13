@@ -27,6 +27,8 @@ import nachos.machine.*;
  * new KThread(p).fork();
  * </pre></blockquote>
  */
+
+
 public class KThread {
     /**
      * Get the current thread.
@@ -34,8 +36,8 @@ public class KThread {
      * @return	the current thread.
      */
     public static KThread currentThread() {
-	Lib.assertTrue(currentThread != null);
-	return currentThread;
+	    Lib.assertTrue(currentThread != null);
+	    return currentThread;
     }
     
     /**
@@ -43,8 +45,8 @@ public class KThread {
      * create an idle thread as well.
      */
     public KThread() {
-	if (currentThread != null) {
-	    tcb = new TCB();
+	    if (currentThread != null) {
+	        tcb = new TCB();
 	}	    
 	else {
 	    readyQueue = ThreadedKernel.scheduler.newThreadQueue(false);
@@ -283,7 +285,9 @@ public class KThread {
 			boolean intStatus = Machine.interrupt().disable(); 
 			if (joinQueue == null)
 			{
-				joinQueue = ThreadedKernel.scheduler.newThreadQueue(true); 
+                joinQueue = ThreadedKernel.scheduler.newThreadQueue(true); 
+                
+                
 				joinQueue.acquire(this); 
 			}
 			
@@ -460,4 +464,5 @@ public class KThread {
     private static KThread currentThread = null;
     private static KThread toBeDestroyed = null;
     private static KThread idleThread = null;
+    private ThreadQueue joinQueue = null;
 }

@@ -2,6 +2,10 @@ package nachos.threads;
 
 import nachos.machine.*;
 
+import javax.crypto.Mac;
+import java.util.Comparator;
+import java.util.PriorityQueue;
+
 /**
  * Uses the hardware timer to provide preemption, and to allow threads to sleep
  * until a certain time.
@@ -79,4 +83,30 @@ public class Alarm {
 
        Machine.interrupt().restore(initStatus);
     }
+
+    private PriorityQueue<PriorThread> waitQueue = new PriorityQueue(new PriorThread.Comp());
+
+    
 }
+
+class PriorThread {
+    public KThread thread;
+    public long priority;
+
+    public PriorThread(KThread t, long p) {
+        thread = t;
+        priority = p;
+    }
+
+    public static class Comp implements Comparator<PriorThread> {
+        public int compare(PriorThread a, PriorThread b) {
+            if (a.priority > b.priority)
+                return 1;
+            else if (a.priority < b.priority)
+                return -1;
+            return 0;
+        }
+    }
+}
+
+
