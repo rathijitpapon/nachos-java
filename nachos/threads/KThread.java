@@ -272,10 +272,26 @@ public class KThread {
      * call is not guaranteed to return. This thread must not be the current
      * thread.
      */
+
+     /////////////////I have to work here//////////////////
     public void join() {
-	Lib.debug(dbgThread, "Joining to thread: " + toString());
-	
-	Lib.assertTrue(this != currentThread);
+	    Lib.debug(dbgThread, "Joining to thread: " + toString());
+        Lib.assertTrue(this != currentThread);
+        
+        if (status != statusFinished)
+		{
+			boolean intStatus = Machine.interrupt().disable(); 
+			if (joinQueue == null)
+			{
+				joinQueue = ThreadedKernel.scheduler.newThreadQueue(true); 
+				joinQueue.acquire(this); 
+			}
+			
+			
+			joinQueue.waitForAccess(currentThread); 
+			currentThread.sleep(); 
+			Machine.interrupt().restore(intStatus); 
+		}
 
     }
 
