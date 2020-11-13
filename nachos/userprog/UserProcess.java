@@ -22,11 +22,18 @@ public class UserProcess {
     /**
      * Allocate a new process.
      */
+
+    OpenFile stdIn;
+    OpenFile stdOut;
+
     public UserProcess() {
         int numPhysPages = Machine.processor().getNumPhysPages();
         pageTable = new TranslationEntry[numPhysPages];
         for (int i = 0; i < numPhysPages; i++)
             pageTable[i] = new TranslationEntry(i, i, true, false, false, false);
+
+        stdIn = UserKernel.console.openForReading();
+        stdOut = UserKernel.console.openForWriting();
     }
 
     /**
@@ -382,6 +389,26 @@ public class UserProcess {
         return 0;
     }
 
+    private int handleWrite(int fileDescriptor, int buffer, int size) {
+        if (fileDescriptor != 1 || buffer < 0 || size < 0) {
+            return -1;
+        }
+        byte[] buff = new byte[size];
+        int qn = readVirtualMemory(buffer, buff);
+        stdOut.write(buff, 0, qn);
+        return qn;
+    }
+
+    private int handleRead(int fileDescriptor, int buffer, int size) {
+        if (fileDescriptor != 0 || buffer < 0 || size < 0) {
+            return -1;
+        }
+        byte[] buff = new byte[size];
+        stdIn.read(buff, 0, size);
+        int qn = writeVirtualMemory(buffer, buff);
+        return qn;
+    }
+
     private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2, syscallJoin = 3, syscallCreate = 4,
             syscallOpen = 5, syscallRead = 6, syscallWrite = 7, syscallClose = 8, syscallUnlink = 9;
 
@@ -450,6 +477,12 @@ public class UserProcess {
         switch (syscall) {
             case syscallHalt:
                 return handleHalt();
+
+            case syscallWrite:
+                return handleWrite(a0, a1, a2);
+
+            case syscallRead:
+                return handleRead(a0, a1, a2);
 
             default:
                 Lib.debug(dbgProcess, "Unknown syscall " + syscall);
