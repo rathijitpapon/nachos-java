@@ -1,17 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 
 package nachos.threads;
 
 import nachos.machine.*;
 
-/**
- *
- * @author ana
- */
 public class Test {
 
     public static void initiateTest() {
@@ -186,7 +177,7 @@ class AlarmTest {
         long time2 = 900000;
         long time3 = 500000;
 
-        Alarm alarm = new Alarm();
+        Alarm alarm = ThreadedKernel.alarm;
 
         // create threads for each a test object
         KThread t1 = new KThread(new AlarmTestRunnable(time1, alarm)).setName("Alarm thread 1");
