@@ -5,6 +5,7 @@ import nachos.threads.*;
 import nachos.userprog.*;
 
 import java.io.EOFException;
+import java.util.LinkedList;
 
 /**
  * Encapsulates the state of a user process that is not contained in its user
@@ -34,6 +35,9 @@ public class UserProcess {
 
         stdIn = UserKernel.console.openForReading();
         stdOut = UserKernel.console.openForWriting();
+        UserProcess.runningProcesses++;
+        UserProcess.numProcesses++;
+        processId = UserProcess.numProcesses;
     }
 
     /**
@@ -58,7 +62,11 @@ public class UserProcess {
         if (!load(name, args))
             return false;
 
-        new UThread(this).setName(name).fork();
+        UThread uThread = new UThread(this);
+
+        if (mainThread == null)
+            mainThread = uThread;
+        uThread.setName(name).fork();
 
         return true;
     }
@@ -366,7 +374,7 @@ public class UserProcess {
         Processor processor = Machine.processor();
 
         // by default, everything's 0
-        for (int i = 0; i < processor.numUserRegisters; i++)
+        for (int i = 0; i < Processor.numUserRegisters; i++)
             processor.writeRegister(i, 0);
 
         // initialize PC and SP according
@@ -407,6 +415,106 @@ public class UserProcess {
         stdIn.read(buff, 0, size);
         int qn = writeVirtualMemory(buffer, buff);
         return qn;
+    }
+
+    private int handleExit(int status) {
+        int ret = -1;
+        exitCode = status;
+        unloadSections();
+
+        UserProcess.runningProcesses--;
+        if (UserProcess.runningProcesses == 0) {
+            Kernel.kernel.terminate();
+        } else {
+            UThread.finish();
+        }
+
+        ret = 0;
+
+        return ret;
+    }
+
+    private int handleJoin(int pid, int retStatusAddr) {
+        int ret = -1;
+
+        if (retStatusAddr < 0 || retStatusAddr / pageSize >= numPages)
+            return ret;
+        else if (pageTable.length <= (retStatusAddr / pageSize)) {
+            return ret;
+        }
+
+        UserProcess childProcess = null;
+        for (UserProcess child : children) {
+            if (child.processId == pid) {
+                childProcess = child;
+                break;
+            }
+        }
+
+        if (!(childProcess != null && !childProcess.joint)) {
+            ret = 1;
+        } else {
+            ret = 0;
+        }
+
+        childProcess.joint = true;
+        // childProcess.mainThread.join();
+
+        byte[] exitBytes = Lib.bytesFromInt(childProcess.exitCode);
+        if (writeVirtualMemory(retStatusAddr, exitBytes) != 4) {
+            ret = 1;
+        } else {
+            ret = 0;
+        }
+
+        return -1;
+    }
+
+    private int handleExec(int nameAddr, int argc, int argvAddr) {
+        int ret = -1;
+
+        if (nameAddr < 0 || nameAddr / pageSize >= numPages)
+            return ret;
+        else if (pageTable.length <= (nameAddr / pageSize)) {
+            return ret;
+        }
+
+        if (argvAddr < 0 || argvAddr / pageSize >= numPages)
+            return ret;
+        else if (pageTable.length <= (argvAddr / pageSize)) {
+            return ret;
+        }
+
+        if (!(0 <= argc && argc < 256))
+            return ret;
+
+        String filename = readVirtualMemoryString(nameAddr, 256);
+        String[] argv = new String[argc];
+
+        for (int i = 0; i < argc; ++i) {
+            byte[] curArg = new byte[4];
+            if (!(readVirtualMemory(argvAddr + i * 4, curArg) == 4))
+                return ret;
+
+            int argAddress = Lib.bytesToInt(curArg, 0);
+
+            if (argAddress < 0 || argAddress / pageSize >= numPages)
+                return ret;
+            else if (pageTable.length <= (argAddress / pageSize)) {
+                return ret;
+            }
+            argv[i] = readVirtualMemoryString(argAddress, 256);
+        }
+
+        UserProcess child = new UserProcess();
+        children.add(child);
+
+        if (!child.execute(filename, argv))
+            ret = -1;
+        else
+            ret = child.processId;
+
+        return ret;
     }
 
     private static final int syscallHalt = 0, syscallExit = 1, syscallExec = 2, syscallJoin = 3, syscallCreate = 4,
@@ -484,6 +592,15 @@ public class UserProcess {
             case syscallRead:
                 return handleRead(a0, a1, a2);
 
+            case syscallExit:
+                return handleExit(a0);
+
+            case syscallJoin:
+                return handleJoin(a0, a1);
+
+            case syscallExec:
+                return handleExec(a0, a1, a2);
+
             default:
                 Lib.debug(dbgProcess, "Unknown syscall " + syscall);
                 Lib.assertNotReached("Unknown system call!");
@@ -532,4 +649,12 @@ public class UserProcess {
 
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';
+
+    private int exitCode = 0;
+    private static int runningProcesses = 0;
+    private int processId;
+    private static int numProcesses = 0;
+    public boolean joint = false;
+    private LinkedList<UserProcess> children = new LinkedList<>();
+    private UThread mainThread = null;
 }
