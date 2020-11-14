@@ -458,7 +458,7 @@ public class UserProcess {
         }
 
         childProcess.joint = true;
-        // childProcess.mainThread.join();
+        childProcess.mainThread.join();
 
         byte[] exitBytes = Lib.bytesFromInt(childProcess.exitCode);
         if (writeVirtualMemory(retStatusAddr, exitBytes) != 4) {
