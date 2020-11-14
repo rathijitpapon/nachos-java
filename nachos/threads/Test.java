@@ -119,7 +119,8 @@ class Condition2Test {
             for (int i = 0; i < 5; i++) {
                 KThread.yield();
                 int listenedValue = communicator.listen();
-                System.out.println(KThread.currentThread().getName() + " listened " + listenedValue);
+                // System.out.println(KThread.currentThread().getName() + " listened " +
+                // listenedValue);
                 KThread.yield();
             }
         }
@@ -138,8 +139,9 @@ class Condition2Test {
         public void run() {
             for (int i = 0; i < 5; i++) {
                 KThread.yield();
-                System.out.println(KThread.currentThread().getName() + " spoke " + i);
+
                 communicator.speak(i);
+                // System.out.println(KThread.currentThread().getName() + " spoke " + i);
                 KThread.yield();
             }
         }

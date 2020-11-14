@@ -48,6 +48,7 @@ public class Communicator {
         }
 
         this.word = word;
+        System.out.println(KThread.currentThread().getName() + " spoke " + word);
         this.spoken = true;
         this.listener.wakeAll();
         this.speaker.sleep();
@@ -71,6 +72,7 @@ public class Communicator {
         }
 
         int listenedWord = this.word;
+        System.out.println(KThread.currentThread().getName() + " listened " + listenedWord);
         this.speaker.wakeAll();
         this.spoken = false;
 
